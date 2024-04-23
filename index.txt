@@ -1,2 +1,4 @@
 php artisan make:model Book -m
 php artisan make:model Review -m
+
+creiranje Factory
