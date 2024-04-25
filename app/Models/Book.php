@@ -10,6 +10,8 @@ class Book extends Model
 {
     use HasFactory;
 
+    protected $fillable = ['review', 'rating'];
+
     public function reviews() {
 
         return $this->hasMany(Review::class);//jedna knjiga moze imati vise recenzija
@@ -20,6 +22,19 @@ class Book extends Model
     public function scopeTitle(Builder $query, string $title): Builder {
 
         return $query->where('title', 'LIKE', '%' . $TITLE . '%');
+
+    }
+    //najpopularnije knjige
+    public function sopePopular(Builder $qurery):Builder {
+
+        return $query->withCount('reviews')
+            ->orderBy('reviews_count', 'desc');
+    }
+    //sa najvisom ocjenom knjige
+    public function scopeHighestRated(Builder $query): Builder {
+
+        return $query->withAvg('reviews', 'rating')
+            ->orderBy('reviews_avg_rating', 'desc');
 
     }
 }
