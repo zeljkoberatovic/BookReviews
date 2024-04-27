@@ -18,11 +18,13 @@ class Book extends Model
         return $this->hasMany(Review::class);
     }
 
+    ////lokalni opseg upita
     public function scopeTitle(Builder $query, string $title): Builder|QueryBuilder
     {
         return $query->where('title', 'LIKE', '%' . $title . '%');
     }
 
+    //najpopularnije knjige
     public function scopePopular(Builder $query, $from = null, $to = null): Builder|QueryBuilder
     {
         return $query->withCount([
@@ -32,6 +34,7 @@ class Book extends Model
         ])->orderByDesc('reviews_count');
     }
 
+    //knjige sa najvecim ocjenama
     public function scopeHighestRated(Builder $query, $from = null, $to = null): Builder|QueryBuilder
     {
         return $query->withAvg([
@@ -41,10 +44,12 @@ class Book extends Model
         ], 'rating')->orderByDesc('reviews_avg_rating');
     }
 
+
     public function scopeMinReviews(Builder $query, int $minReviews): Builder|QueryBuilder
     {
         return $query->having('reviews_count', '>=', $minReviews);
     }
+    
 
     private function dateRangeFilter(Builder $query, $from = null, $to = null)
     {
