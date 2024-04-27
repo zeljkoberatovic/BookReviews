@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Query\Builder as QueryBuilder;
 
 class Book extends Model
 {
@@ -12,29 +13,48 @@ class Book extends Model
 
     protected $fillable = ['review', 'rating'];
 
-    public function reviews() {
-
-        return $this->hasMany(Review::class);//jedna knjiga moze imati vise recenzija
-
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
     }
 
-    //lokalni opseg upita
-    public function scopeTitle(Builder $query, string $title): Builder {
-
-        return $query->where('title', 'LIKE', '%' . $TITLE . '%');
-
+    public function scopeTitle(Builder $query, string $title): Builder|QueryBuilder
+    {
+        return $query->where('title', 'LIKE', '%' . $title . '%');
     }
-    //najpopularnije knjige
-    public function sopePopular(Builder $qurery):Builder {
 
-        return $query->withCount('reviews')
-            ->orderBy('reviews_count', 'desc');
+    public function scopePopular(Builder $query, $from = null, $to = null): Builder|QueryBuilder
+    {
+        return $query->withCount([
+            'reviews' => function (Builder $q) use ($from, $to) {
+                return $this->dateRangeFilter($q, $from, $to);
+            }
+        ])->orderByDesc('reviews_count');
     }
-    //sa najvisom ocjenom knjige
-    public function scopeHighestRated(Builder $query): Builder {
 
-        return $query->withAvg('reviews', 'rating')
-            ->orderBy('reviews_avg_rating', 'desc');
+    public function scopeHighestRated(Builder $query, $from = null, $to = null): Builder|QueryBuilder
+    {
+        return $query->withAvg([
+            'reviews' => function (Builder $q) use ($from, $to) {
+                return $this->dateRangeFilter($q, $from, $to);
+            }
+        ], 'rating')->orderByDesc('reviews_avg_rating');
+    }
 
+    public function scopeMinReviews(Builder $query, int $minReviews): Builder|QueryBuilder
+    {
+        return $query->having('reviews_count', '>=', $minReviews);
+    }
+
+    private function dateRangeFilter(Builder $query, $from = null, $to = null)
+    {
+        if ($from && !$to) {
+            $query->where('created_at', '>=', $from);
+        } elseif (!$from && $to) {
+            $query->where('created_at', '<=', $to);
+        } elseif ($from && $to) {
+            $query->whereBetween('created_at', [$from, $to]);
+        }
+        return $query;
     }
 }
