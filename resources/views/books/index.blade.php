@@ -63,4 +63,11 @@
 
             @endforelse
         </ul>
+
+        @if($books->count())
+    <nav class="pagination mt-8">
+        {{ $books->links() }}
+    </nav>
+@endif
+
 @endsection
